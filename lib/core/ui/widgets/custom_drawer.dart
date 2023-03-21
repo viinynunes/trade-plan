@@ -63,7 +63,7 @@ class CustomDrawer extends StatelessWidget {
               ),
               title: Center(
                 child: Text(
-                  'Operaçõs',
+                  'Operações',
                   style: textTheme.bodyLarge,
                 ),
               ),
