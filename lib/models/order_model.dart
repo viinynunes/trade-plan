@@ -38,9 +38,5 @@ class OrderModel extends HiveObject {
     required this.status,
   });
 
-  double? get taxByContract {
-    return paper.taxByContract != null
-        ? contracts * paper.taxByContract!
-        : null;
-  }
+
 }

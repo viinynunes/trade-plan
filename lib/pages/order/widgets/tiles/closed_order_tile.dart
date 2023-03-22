@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:trade_plan/core/extensions/date_format_extension.dart';
 import 'package:trade_plan/models/closed_order_model.dart';
+import 'package:trade_plan/pages/order/controller/close_order_bloc.dart';
 
+import '../../../../core/ui/states/base_state.dart';
 import '../../../../models/enums/order_result_enum.dart';
 
 class ClosedOrderTile extends StatefulWidget {
@@ -15,7 +17,7 @@ class ClosedOrderTile extends StatefulWidget {
   State<ClosedOrderTile> createState() => _ClosedOrderTileState();
 }
 
-class _ClosedOrderTileState extends State<ClosedOrderTile> {
+class _ClosedOrderTileState extends BaseState<ClosedOrderTile, CloseOrderBloc> {
   Color getBackgroudColor(OrderResultStatus result, ColorScheme colorScheme) {
     if (result == OrderResultStatus.win) {
       return colorScheme.secondaryContainer;
@@ -115,8 +117,7 @@ class _ClosedOrderTileState extends State<ClosedOrderTile> {
                   Row(
                     children: [
                       const Text(r'R$: '),
-                      Text(
-                          widget.closedOrder.getMoneyResult.toStringAsFixed(2)),
+                      Text(widget.closedOrder.moneyResult.toStringAsFixed(2)),
                     ],
                   ),
                 ],

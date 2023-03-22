@@ -16,12 +16,15 @@ class ClosedOrderModel extends OrderModel {
   @HiveField(11)
   final double pointsResult;
   @HiveField(12)
+  final double moneyResult;
+  @HiveField(13)
   final double? tax;
 
   ClosedOrderModel({
     required this.closeTime,
     required this.result,
     required this.pointsResult,
+    required this.moneyResult,
     this.tax,
     required super.operation,
     required super.paper,
@@ -32,20 +35,4 @@ class ClosedOrderModel extends OrderModel {
     required super.executionTime,
     required super.status,
   });
-
-  double get getRiskReturn => 1;
-
-  double get getMoneyResult {
-    final tax = super.taxByContract;
-
-    if (tax != null) {
-      return _getOperationMoneyResult() - tax;
-    } else {
-      return _getOperationMoneyResult();
-    }
-  }
-
-  double _getOperationMoneyResult() {
-    return (pointsResult / super.paper.pointsPerTicks) * super.contracts;
-  }
 }

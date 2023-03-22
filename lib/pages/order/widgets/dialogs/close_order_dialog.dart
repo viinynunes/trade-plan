@@ -1,10 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:trade_plan/core/extensions/date_format_extension.dart';
 import 'package:trade_plan/models/closed_order_model.dart';
 import 'package:trade_plan/models/enums/order_result_enum.dart';
 import 'package:trade_plan/models/enums/order_status_enum.dart';
 import 'package:trade_plan/models/order_model.dart';
+import 'package:trade_plan/pages/order/controller/close_order_bloc.dart';
 import 'package:validatorless/validatorless.dart';
+
+import '../../../../core/ui/states/base_state.dart';
+import '../../controller/states/close_order_state.dart';
 
 class CloseOrderDialog extends StatefulWidget {
   const CloseOrderDialog(
@@ -18,11 +24,13 @@ class CloseOrderDialog extends StatefulWidget {
   State<CloseOrderDialog> createState() => _CloseOrderDialogState();
 }
 
-class _CloseOrderDialogState extends State<CloseOrderDialog> {
+class _CloseOrderDialogState
+    extends BaseState<CloseOrderDialog, CloseOrderBloc> {
   late OrderResultStatus orderResult;
   DateTime selectedDate = DateTime.now();
   String selectedDateString = '';
   bool editMoneyManually = false;
+  bool editTaxManually = false;
 
   final pointsResultEC = TextEditingController();
   final taxEC = TextEditingController();
@@ -32,18 +40,16 @@ class _CloseOrderDialogState extends State<CloseOrderDialog> {
   final formKey = GlobalKey<FormState>();
 
   @override
-  void initState() {
+  initState() {
     super.initState();
-
-    selectedDateString = selectedDate.dateAndTimeFormat;
 
     orderResult = OrderResultStatus.win;
 
-    pointsResultEC.text = widget.order.expectedTakeProfit.toString();
-    contractsEC.text = widget.order.contracts.toString();
+    selectedDateString = selectedDate.dateAndTimeFormat;
 
-    taxEC.text = widget.order.taxByContract?.toStringAsFixed(2) ?? '0';
-    _calculateMoneyResult();
+    resetFields(contracts: true, pointsResult: true, taxByContract: true);
+
+    calculateMoneyResult();
   }
 
   _setPointsByResultStatus(
@@ -61,21 +67,17 @@ class _CloseOrderDialogState extends State<CloseOrderDialog> {
     }
   }
 
-  double _calculateTax() {
-    final tax = widget.order.paper.taxByContract ?? 0;
+  double getContracts() {
+    double contracts = 0.0;
 
-    taxEC.text = (tax * double.parse(contractsEC.text)).toStringAsFixed(2);
-
-    return tax;
-  }
-
-  double _calculateMoneyResult() {
-    double tax = 0.0;
-
-    if (taxEC.text.isNotEmpty) {
-      tax = double.parse(taxEC.text);
+    if (contractsEC.text.isNotEmpty) {
+      contracts = double.parse(contractsEC.text);
     }
 
+    return contracts;
+  }
+
+  double getPoints() {
     double points = 0;
 
     if (pointsResultEC.text.isNotEmpty &&
@@ -84,15 +86,44 @@ class _CloseOrderDialogState extends State<CloseOrderDialog> {
       points = double.parse(pointsResultEC.text);
     }
 
-    if (tax >= 0 && !points.isNaN) {
-      final moneyResult = (points / widget.order.paper.pointsPerTicks) *
-              double.parse(contractsEC.text) -
-          tax;
-      moneyResultEC.text = moneyResult.toStringAsFixed(2);
-      return moneyResult;
+    return points;
+  }
+
+  double getTax() {
+    double tax = 0.0;
+
+    if (taxEC.text.isNotEmpty) {
+      tax = double.parse(taxEC.text);
     }
 
-    return 0;
+    return tax;
+  }
+
+  resetFields({
+    bool pointsResult = false,
+    bool contracts = false,
+    bool taxByContract = false,
+  }) {
+    pointsResult
+        ? pointsResultEC.text = widget.order.expectedTakeProfit.toString()
+        : null;
+
+    contracts ? contractsEC.text = widget.order.contracts.toString() : null;
+
+    taxByContract
+        ? taxEC.text =
+            widget.order.paper.taxByContract?.toStringAsFixed(2) ?? '0'
+        : null;
+  }
+
+  calculateMoneyResult() {
+    bloc.calculateMoneyResult(
+      contractNumber: getContracts(),
+      points: getPoints(),
+      moneyByTick: widget.order.paper.moneyByTick,
+      pointsPerTick: widget.order.paper.pointsPerTicks,
+      tax: getTax(),
+    );
   }
 
   @override
@@ -113,7 +144,27 @@ class _CloseOrderDialogState extends State<CloseOrderDialog> {
     }
 
     return AlertDialog(
-      title: const Center(child: Text('Encerrar Ordem')),
+      title: Column(
+        children: [
+          const Center(child: Text('Encerrar Ordem')),
+          const SizedBox(
+            height: 15,
+          ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              Text(
+                widget.order.paper.name,
+                style: textTheme.bodyMedium,
+              ),
+              Text(
+                widget.order.operation.name,
+                style: textTheme.bodyMedium,
+              ),
+            ],
+          ),
+        ],
+      ),
       content: SingleChildScrollView(
         child: SizedBox(
           width: double.maxFinite,
@@ -179,8 +230,15 @@ class _CloseOrderDialogState extends State<CloseOrderDialog> {
                             },
                             onChanged: (text) {
                               if (text.isNotEmpty) {
-                                _calculateTax();
-                                _calculateMoneyResult();
+                                resetFields(taxByContract: true);
+                                if (!editTaxManually) {
+                                  bloc.calculateTaxByContract(
+                                      contractNumber: getContracts(),
+                                      taxByContract:
+                                          widget.order.paper.taxByContract);
+                                }
+                                calculateMoneyResult();
+                                HapticFeedback.vibrate();
                               }
                             },
                             validator: Validatorless.required('Obrigatório'),
@@ -235,7 +293,7 @@ class _CloseOrderDialogState extends State<CloseOrderDialog> {
                           points: double.parse(pointsResultEC.text),
                           result: orderResult);
 
-                      _calculateMoneyResult();
+                      calculateMoneyResult();
                     }
                   },
                   alignment: Alignment.center,
@@ -261,7 +319,7 @@ class _CloseOrderDialogState extends State<CloseOrderDialog> {
                   },
                   onChanged: (text) {
                     if (text.isNotEmpty) {
-                      _calculateMoneyResult();
+                      calculateMoneyResult();
                     }
                   },
                   onFieldSubmitted: (text) {
@@ -279,20 +337,56 @@ class _CloseOrderDialogState extends State<CloseOrderDialog> {
                   'Taxas',
                   style: textTheme.bodyLarge,
                 ),
-                TextFormField(
-                  controller: taxEC,
-                  decoration: const InputDecoration(
-                    hintText: 'Total de taxa',
-                    icon: Icon(Icons.money_off),
-                  ),
-                  keyboardType: TextInputType.number,
+                BlocSelector<CloseOrderBloc, CloseOrderState, double>(
+                  selector: (state) => state.tax,
+                  builder: (context, tax) {
+                    if (!editTaxManually) {
+                      taxEC.text = tax.toStringAsFixed(2);
+                      calculateMoneyResult();
+                    }
+
+                    return TextFormField(
+                      controller: taxEC,
+                      enabled: editTaxManually,
+                      decoration: const InputDecoration(
+                        hintText: 'Total de taxa',
+                        icon: Icon(Icons.money_off),
+                      ),
+                      keyboardType: TextInputType.number,
+                      onTap: () {
+                        taxEC.selection = TextSelection(
+                            baseOffset: 0,
+                            extentOffset: taxEC.value.text.length);
+                      },
+                      onFieldSubmitted: (text) {
+                        taxEC.text = text;
+
+                        calculateMoneyResult();
+                      },
+                    );
+                  },
+                ),
+                GestureDetector(
                   onTap: () {
-                    taxEC.selection = TextSelection(
-                        baseOffset: 0, extentOffset: taxEC.value.text.length);
+                    setState(() {
+                      editTaxManually = !editTaxManually;
+                      resetFields(taxByContract: true);
+                      calculateMoneyResult();
+                    });
                   },
-                  onChanged: (text) {
-                    _calculateMoneyResult();
-                  },
+                  child: Row(
+                    children: [
+                      Checkbox(
+                          value: editTaxManually,
+                          onChanged: (e) {
+                            setState(() {
+                              editTaxManually = e!;
+                              calculateMoneyResult();
+                            });
+                          }),
+                      const Text('Editar Taxa Manualmente'),
+                    ],
+                  ),
                 ),
                 const SizedBox(
                   height: 10,
@@ -301,20 +395,27 @@ class _CloseOrderDialogState extends State<CloseOrderDialog> {
                   'Finenceiro',
                   style: textTheme.bodyLarge,
                 ),
-                TextFormField(
-                  controller: moneyResultEC,
-                  enabled: editMoneyManually,
-                  decoration: const InputDecoration(
-                    hintText: r'R$',
-                    icon: Icon(Icons.attach_money_outlined),
-                  ),
-                  onTap: () {
-                    moneyResultEC.selection = TextSelection(
-                        baseOffset: 0,
-                        extentOffset: moneyResultEC.value.text.length);
+                BlocSelector<CloseOrderBloc, CloseOrderState, double>(
+                  selector: (state) => state.moneyResult,
+                  builder: (context, moneyResult) {
+                    moneyResultEC.text = moneyResult.toStringAsFixed(2);
+
+                    return TextFormField(
+                      controller: moneyResultEC,
+                      enabled: editMoneyManually,
+                      decoration: const InputDecoration(
+                        hintText: r'R$',
+                        icon: Icon(Icons.attach_money_outlined),
+                      ),
+                      onTap: () {
+                        moneyResultEC.selection = TextSelection(
+                            baseOffset: 0,
+                            extentOffset: moneyResultEC.value.text.length);
+                      },
+                      keyboardType: const TextInputType.numberWithOptions(),
+                      validator: Validatorless.required('Obrigatório'),
+                    );
                   },
-                  keyboardType: const TextInputType.numberWithOptions(),
-                  validator: Validatorless.required('Obrigatório'),
                 ),
                 GestureDetector(
                   onTap: () {
@@ -354,6 +455,7 @@ class _CloseOrderDialogState extends State<CloseOrderDialog> {
                                 result: orderResult,
                                 pointsResult: double.parse(pointsResultEC.text),
                                 operation: widget.order.operation,
+                                moneyResult: double.parse(moneyResultEC.text),
                                 paper: widget.order.paper,
                                 contracts: double.parse(contractsEC.text),
                                 enterPoint: widget.order.enterPoint,

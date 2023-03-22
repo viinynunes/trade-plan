@@ -13,11 +13,14 @@ class PaperModel extends HiveObject {
   double? taxByContract;
   @HiveField(3)
   double pointsPerTicks;
+  @HiveField(4)
+  double moneyByTick;
 
   PaperModel({
     this.id,
     required this.name,
     required this.pointsPerTicks,
+    required this.moneyByTick,
     this.taxByContract,
   });
 }

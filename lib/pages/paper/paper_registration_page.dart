@@ -18,6 +18,7 @@ class _PaperRegistrationPageState extends State<PaperRegistrationPage> {
   final nameEC = TextEditingController();
   final pointsEC = TextEditingController();
   final taxEC = TextEditingController();
+  final moneyByTickEC = TextEditingController();
 
   final nameFocus = FocusNode();
 
@@ -28,6 +29,7 @@ class _PaperRegistrationPageState extends State<PaperRegistrationPage> {
     if (widget.paper != null) {
       nameEC.text = widget.paper!.name;
       pointsEC.text = widget.paper!.pointsPerTicks.toString();
+      moneyByTickEC.text = widget.paper!.moneyByTick.toString();
       taxEC.text = widget.paper!.taxByContract?.toString() ?? '0';
     }
 
@@ -61,6 +63,7 @@ class _PaperRegistrationPageState extends State<PaperRegistrationPage> {
                 id: widget.paper?.key,
                 name: nameEC.text.toUpperCase(),
                 pointsPerTicks: double.parse(pointsEC.text),
+                moneyByTick: double.parse(moneyByTickEC.text),
                 taxByContract: double.parse(taxEC.text),
               ),
             );
@@ -97,6 +100,20 @@ class _PaperRegistrationPageState extends State<PaperRegistrationPage> {
               TextFormField(
                 controller: pointsEC,
                 decoration: const InputDecoration(hintText: '5'),
+                keyboardType: TextInputType.number,
+                textInputAction: TextInputAction.next,
+                validator: Validatorless.required(' Campo Obrigatório'),
+              ),
+              const SizedBox(
+                height: 15,
+              ),
+              Text(
+                'Valor por tick',
+                style: textTheme.titleLarge,
+              ),
+              TextFormField(
+                controller: moneyByTickEC,
+                decoration: const InputDecoration(hintText: r'$1.00'),
                 keyboardType: TextInputType.number,
                 textInputAction: TextInputAction.next,
                 validator: Validatorless.required(' Campo Obrigatório'),

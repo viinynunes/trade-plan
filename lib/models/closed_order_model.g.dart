@@ -20,7 +20,8 @@ class ClosedOrderModelAdapter extends TypeAdapter<ClosedOrderModel> {
       closeTime: fields[9] as DateTime,
       result: fields[10] as OrderResultStatus,
       pointsResult: fields[11] as double,
-      tax: fields[12] as double?,
+      moneyResult: fields[12] as double,
+      tax: fields[13] as double?,
       operation: fields[6] as OperationModel,
       paper: fields[7] as PaperModel,
       contracts: fields[1] as double,
@@ -35,7 +36,7 @@ class ClosedOrderModelAdapter extends TypeAdapter<ClosedOrderModel> {
   @override
   void write(BinaryWriter writer, ClosedOrderModel obj) {
     writer
-      ..writeByte(13)
+      ..writeByte(14)
       ..writeByte(9)
       ..write(obj.closeTime)
       ..writeByte(10)
@@ -43,6 +44,8 @@ class ClosedOrderModelAdapter extends TypeAdapter<ClosedOrderModel> {
       ..writeByte(11)
       ..write(obj.pointsResult)
       ..writeByte(12)
+      ..write(obj.moneyResult)
+      ..writeByte(13)
       ..write(obj.tax)
       ..writeByte(0)
       ..write(obj.id)

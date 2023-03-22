@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 
 import 'package:provider/provider.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:trade_plan/core/services/order_result_service_impl.dart';
 import 'package:trade_plan/data/order/datasources/closed_order_datasource.dart';
 import 'package:trade_plan/pages/operation/controller/operation_list_bloc.dart';
+import 'package:trade_plan/pages/order/controller/close_order_bloc.dart';
 import 'package:trade_plan/pages/order/controller/order_list_bloc.dart';
 import 'package:trade_plan/pages/order/controller/order_registration_bloc.dart';
 import 'package:trade_plan/pages/paper/controller/paper_list_bloc.dart';
@@ -21,6 +23,7 @@ import '../../data/paper/datasources/paper_datasource.dart';
 import '../../data/paper/local/paper_hive_datasource.dart';
 import '../../data/paper/repositories/paper_repository.dart';
 import '../../data/paper/repositories/paper_repository_impl.dart';
+import '../services/order_result_service.dart';
 
 part 'providers/operation_providers.dart';
 part 'providers/paper_providers.dart';
@@ -36,6 +39,9 @@ class ApplicationBinding extends StatelessWidget {
     final providers = [
       Provider<HiveInterface>(
         create: (context) => Hive,
+      ),
+      Provider<OrderResultService>(
+        create: (context) => OrderResultServiceImpl(),
       ),
       ..._operationProviders,
       ..._paperProviders,

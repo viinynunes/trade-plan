@@ -16,5 +16,8 @@ List<Provider> _orderProviders = [
       context.read(),
       context.read(),
     ),
-  )
+  ),
+  Provider<CloseOrderBloc>(
+    create: (context) => CloseOrderBloc(context.read()),
+  ),
 ];
