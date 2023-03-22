@@ -259,6 +259,11 @@ class _OrderRegistrationPageState
                               textAlign: TextAlign.center,
                               style: textTheme.bodyLarge
                                   ?.copyWith(fontWeight: FontWeight.bold),
+                              onTap: () => positionSizeEC.selection =
+                                  TextSelection(
+                                      baseOffset: 0,
+                                      extentOffset:
+                                          positionSizeEC.value.text.length),
                               validator: Validatorless.multiple([
                                 Validatorless.number('Inválido'),
                                 Validatorless.required('Obrigatório'),
@@ -334,6 +339,11 @@ class _OrderRegistrationPageState
                               style: textTheme.bodyLarge?.copyWith(
                                   fontWeight: FontWeight.bold,
                                   color: colorScheme.primary),
+                              onTap: () => entryPointEC.selection =
+                                  TextSelection(
+                                      baseOffset: 0,
+                                      extentOffset:
+                                          entryPointEC.value.text.length),
                               validator: Validatorless.multiple([
                                 Validatorless.number('Inválido'),
                                 Validatorless.required('Obrigatório')
@@ -369,6 +379,9 @@ class _OrderRegistrationPageState
                               style: textTheme.bodyLarge?.copyWith(
                                   fontWeight: FontWeight.bold,
                                   color: colorScheme.tertiary),
+                              onTap: () => stopLossEC.selection = TextSelection(
+                                  baseOffset: 0,
+                                  extentOffset: stopLossEC.value.text.length),
                               validator: Validatorless.multiple([
                                 Validatorless.number('Inválido'),
                                 Validatorless.required('Obrigatório'),
@@ -412,6 +425,11 @@ class _OrderRegistrationPageState
                               style: textTheme.bodyLarge?.copyWith(
                                   fontWeight: FontWeight.bold,
                                   color: colorScheme.secondary),
+                              onTap: () => expectedTakeProfitEC.selection =
+                                  TextSelection(
+                                      baseOffset: 0,
+                                      extentOffset: expectedTakeProfitEC
+                                          .value.text.length),
                               validator: (text) {
                                 if (text != null) {
                                   int number = int.parse(text);
