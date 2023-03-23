@@ -4,6 +4,7 @@ import 'package:trade_plan/data/operation/repositories/operation_repository.dart
 import 'package:trade_plan/data/paper/repositories/paper_repository.dart';
 import 'package:trade_plan/models/operation_model.dart';
 
+import '../../../models/paper_model.dart';
 import 'states/order_registration_state.dart';
 
 class OrderRegistrationBloc extends Cubit<OrderRegistrationState> {
@@ -41,5 +42,13 @@ class OrderRegistrationBloc extends Cubit<OrderRegistrationState> {
 
   void selectOperation({required OperationModel? selectedOperation}) {
     emit(state.copyWith(selectedOperation: selectedOperation));
+  }
+
+  void selectPaper({required PaperModel? selectedPaper}) {
+    emit(state.copyWith(selectedPaper: selectedPaper));
+  }
+
+  void selectDate({required DateTime selectedDate}){
+    emit(state.copyWith(selectedDate: selectedDate));
   }
 }

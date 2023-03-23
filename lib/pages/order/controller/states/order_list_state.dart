@@ -11,6 +11,7 @@ class OrderListState extends BaseBlocState {
   final List<OrderModel> openedOrderList;
   final List<ClosedOrderModel> closedOrderList;
   final OrderStatusEnum status;
+  final DateTime? selectedDate;
 
   const OrderListState({
     required super.errorMessage,
@@ -18,17 +19,19 @@ class OrderListState extends BaseBlocState {
     required this.status,
     required this.openedOrderList,
     required this.closedOrderList,
+    required this.selectedDate,
   });
 
-  const OrderListState.initial()
+  OrderListState.initial()
       : openedOrderList = const [],
         closedOrderList = const [],
         status = OrderStatusEnum.idle,
+        selectedDate = DateTime.now(),
         super.initial();
 
   @override
   List<Object?> get props =>
-      [baseStatus, status, openedOrderList, closedOrderList];
+      [baseStatus, status, openedOrderList, closedOrderList, selectedDate];
 
   @override
   OrderListState copyWith({
@@ -37,6 +40,7 @@ class OrderListState extends BaseBlocState {
     String? errorMessage,
     List<OrderModel>? openedOrderList,
     List<ClosedOrderModel>? closedOrderList,
+    DateTime? selectedDate,
   }) {
     return OrderListState(
       baseStatus: baseStatus ?? this.baseStatus,
@@ -44,6 +48,7 @@ class OrderListState extends BaseBlocState {
       errorMessage: errorMessage ?? this.errorMessage,
       openedOrderList: openedOrderList ?? this.openedOrderList,
       closedOrderList: closedOrderList ?? this.closedOrderList,
+      selectedDate: selectedDate ?? this.selectedDate,
     );
   }
 }

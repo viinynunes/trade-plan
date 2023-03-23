@@ -9,7 +9,11 @@ import '../../../models/closed_order_model.dart';
 class OrderListBloc extends Cubit<OrderListState> {
   final OrderRepository _repository;
 
-  OrderListBloc(this._repository) : super(const OrderListState.initial());
+  OrderListBloc(this._repository) : super(OrderListState.initial());
+
+  void selectDate({required DateTime? selectedDate}) {
+    emit(state.copyWith(selectedDate: selectedDate));
+  }
 
   void getOpenedOrderList({required DateTime date}) async {
     emit(state.copyWith(baseStatus: BaseBlocStatus.loading));
@@ -39,7 +43,7 @@ class OrderListBloc extends Cubit<OrderListState> {
 
   void closeOrder(
       {required ClosedOrderModel order, required DateTime date}) async {
-        emit(state.copyWith(baseStatus: BaseBlocStatus.loading));
+    emit(state.copyWith(baseStatus: BaseBlocStatus.loading));
     final result = await _repository.closeOrder(order);
 
     result.fold((success) {

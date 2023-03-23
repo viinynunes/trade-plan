@@ -23,26 +23,12 @@ class OrderListPage extends StatefulWidget {
 }
 
 class _OrderListPageState extends BaseState<OrderListPage, OrderListBloc> {
-  String selectedDateString = '';
-  DateTime selectedDate = DateTime.now();
-
   @override
   void onReady() {
     super.onReady();
 
-    selectedDateString = selectedDate.onlyDateFormat;
-
-    bloc.getOpenedOrderList(date: selectedDate);
-    bloc.getClosedOrderList(date: selectedDate);
-  }
-
-  resetSelectedDate({DateTime? newDate}) {
-    HapticFeedback.vibrate();
-
-    setState(() {
-      selectedDate = newDate ?? DateTime.now();
-      selectedDateString = selectedDate.onlyDateFormat;
-    });
+    bloc.getOpenedOrderList(date: DateTime.now());
+    bloc.getClosedOrderList(date: DateTime.now());
   }
 
   @override
@@ -62,18 +48,24 @@ class _OrderListPageState extends BaseState<OrderListPage, OrderListBloc> {
       },
       child: Scaffold(
         drawer: const CustomDrawer(),
-        floatingActionButton: FloatingActionButton(
-          onPressed: () async {
-            final result = await Navigator.of(context)
-                .pushNamed('/order-registration');
+        floatingActionButton:
+            BlocSelector<OrderListBloc, OrderListState, DateTime?>(
+          selector: (state) => state.selectedDate,
+          builder: (context, selectedDate) {
+            return FloatingActionButton(
+              onPressed: () async {
+                final result = await Navigator.of(context)
+                    .pushNamed('/order-registration');
 
-            if (result is OrderModel) {
-              bloc.registerOrder(order: result);
-              bloc.getClosedOrderList(date: selectedDate);
-              bloc.getOpenedOrderList(date: selectedDate);
-            }
+                if (result is OrderModel) {
+                  bloc.registerOrder(order: result);
+                  bloc.getClosedOrderList(date: selectedDate!);
+                  bloc.getOpenedOrderList(date: selectedDate);
+                }
+              },
+              child: const Icon(Icons.add),
+            );
           },
-          child: const Icon(Icons.add),
         ),
         body: SizedBox(
           height: size.height,
@@ -84,31 +76,35 @@ class _OrderListPageState extends BaseState<OrderListPage, OrderListBloc> {
                 pinned: false,
                 title: const Text('Ordens'),
                 actions: [
-                  GestureDetector(
-                    onLongPress: () {
-                      resetSelectedDate();
-                      bloc.getClosedOrderList(date: selectedDate);
-                      bloc.getOpenedOrderList(date: selectedDate);
+                  BlocSelector<OrderListBloc, OrderListState, DateTime?>(
+                    selector: (state) => state.selectedDate,
+                    builder: (context, selectedDate) {
+                      return GestureDetector(
+                        onLongPress: () {
+                          HapticFeedback.vibrate();
+                          bloc.getClosedOrderList(date: selectedDate);
+                          bloc.getOpenedOrderList(date: selectedDate);
+                        },
+                        onTap: () {
+                          showDatePicker(
+                                  context: context,
+                                  initialDate: DateTime.now(),
+                                  firstDate: DateTime(2000),
+                                  lastDate: DateTime(3000))
+                              .then((value) {
+                            bloc.selectDate(selectedDate: value);
+                            bloc.getClosedOrderList(date: selectedDate);
+                            bloc.getOpenedOrderList(date: selectedDate);
+                          });
+                        },
+                        child: Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Text(
+                            selectedDate!.onlyDateFormat,
+                          ),
+                        ),
+                      );
                     },
-                    onTap: () {
-                      showDatePicker(
-                              context: context,
-                              initialDate: DateTime.now(),
-                              firstDate: DateTime(2000),
-                              lastDate: DateTime(3000))
-                          .then((value) {
-                        resetSelectedDate(newDate: value);
-
-                        bloc.getClosedOrderList(date: selectedDate);
-                        bloc.getOpenedOrderList(date: selectedDate);
-                      });
-                    },
-                    child: Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Text(
-                        selectedDate.onlyDateFormat,
-                      ),
-                    ),
                   ),
                 ],
               ),
@@ -139,18 +135,18 @@ class _OrderListPageState extends BaseState<OrderListPage, OrderListBloc> {
                             ),
                           ],
                         ),
-                        BlocSelector<OrderListBloc, OrderListState,
-                            List<OrderModel>>(
-                          selector: (state) => state.openedOrderList,
-                          builder: (context, openedOrderList) {
-                            return openedOrderList.isNotEmpty
+                        BlocBuilder<OrderListBloc, OrderListState>(
+                          bloc: bloc,
+                          builder: (context, state) {
+                            return state.openedOrderList.isNotEmpty
                                 ? ListView.builder(
                                     physics:
                                         const NeverScrollableScrollPhysics(),
                                     shrinkWrap: true,
-                                    itemCount: openedOrderList.length,
+                                    itemCount: state.openedOrderList.length,
                                     itemBuilder: (_, index) {
-                                      final order = openedOrderList[index];
+                                      final order =
+                                          state.openedOrderList[index];
 
                                       return OpenedOrderTile(
                                         onLongPress: () async {
@@ -160,7 +156,7 @@ class _OrderListPageState extends BaseState<OrderListPage, OrderListBloc> {
                                               onDelete: () {
                                                 bloc.disableOrder(
                                                     order: order,
-                                                    date: selectedDate);
+                                                    date: state.selectedDate!);
 
                                                 Navigator.pop(context);
                                               },
@@ -177,7 +173,7 @@ class _OrderListPageState extends BaseState<OrderListPage, OrderListBloc> {
                                                   closedOrder) {
                                                 bloc.closeOrder(
                                                     order: closedOrder,
-                                                    date: selectedDate);
+                                                    date: state.selectedDate!);
                                               },
                                             ),
                                           );
@@ -225,19 +221,18 @@ class _OrderListPageState extends BaseState<OrderListPage, OrderListBloc> {
                             ),
                           ],
                         ),
-                        BlocSelector<OrderListBloc, OrderListState,
-                            List<ClosedOrderModel>>(
-                          selector: (state) => state.closedOrderList,
-                          builder: (context, closedOrderList) {
-                            return closedOrderList.isNotEmpty
+                        BlocBuilder<OrderListBloc, OrderListState>(
+                          bloc: bloc,
+                          builder: (context, state) {
+                            return state.closedOrderList.isNotEmpty
                                 ? ListView.builder(
                                     physics:
                                         const NeverScrollableScrollPhysics(),
                                     shrinkWrap: true,
-                                    itemCount: closedOrderList.length,
+                                    itemCount: state.closedOrderList.length,
                                     itemBuilder: (_, index) {
                                       final closedOrder =
-                                          closedOrderList[index];
+                                          state.closedOrderList[index];
 
                                       return ClosedOrderTile(
                                         closedOrder: closedOrder,
@@ -248,7 +243,7 @@ class _OrderListPageState extends BaseState<OrderListPage, OrderListBloc> {
                                               onDelete: () {
                                                 bloc.disableClosedOrder(
                                                     order: closedOrder,
-                                                    date: selectedDate);
+                                                    date: state.selectedDate!);
 
                                                 Navigator.pop(context);
                                               },

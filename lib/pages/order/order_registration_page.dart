@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:trade_plan/core/ui/bloc/base_bloc_state.dart';
 import 'package:trade_plan/models/operation_model.dart';
-import 'package:trade_plan/models/paper_model.dart';
 import 'package:trade_plan/pages/order/controller/states/order_registration_state.dart';
 import 'package:validatorless/validatorless.dart';
 import 'package:trade_plan/core/extensions/date_format_extension.dart';
@@ -21,8 +20,6 @@ class OrderRegistrationPage extends StatefulWidget {
 
 class _OrderRegistrationPageState
     extends BaseState<OrderRegistrationPage, OrderRegistrationBloc> {
-  PaperModel? selectedPaper;
-
   DateTime selectedDate = DateTime.now();
   String selectedDateLabel = DateTime.now().dateAndTimeFormat;
 
@@ -38,9 +35,7 @@ class _OrderRegistrationPageState
     bloc.getPaperList();
     bloc.getOperationList();
 
-    contractsEC.text = '0';
-    stopLossEC.text = '200';
-    expectedTakeProfitEC.text = '500';
+    contractsEC.text = '1';
   }
 
   @override
@@ -98,7 +93,7 @@ class _OrderRegistrationPageState
                         context,
                         OrderModel(
                             operation: state.selectedOperation!,
-                            paper: selectedPaper!,
+                            paper: state.selectedPaper!,
                             contracts: double.parse(contractsEC.text),
                             enterPoint: double.parse(entryPointEC.text),
                             stopLoss: int.parse(stopLossEC.text),
@@ -141,24 +136,22 @@ class _OrderRegistrationPageState
                   Row(
                     children: [
                       Expanded(
-                        child: BlocSelector<OrderRegistrationBloc,
-                            OrderRegistrationState, List<PaperModel>>(
-                          selector: (state) => state.paperList,
-                          builder: (context, paperList) {
+                        child: BlocBuilder<OrderRegistrationBloc,
+                            OrderRegistrationState>(
+                          bloc: bloc,
+                          builder: (context, state) {
                             return DropdownButtonFormField(
-                              value: selectedPaper,
+                              value: state.selectedPaper,
                               hint: const Text('Ex: WINFUT'),
                               iconSize: 0,
-                              items: paperList
+                              items: state.paperList
                                   .map((e) => DropdownMenuItem(
                                         value: e,
                                         child: Text(e.name),
                                       ))
                                   .toList(),
                               onChanged: (e) {
-                                setState(() {
-                                  selectedPaper = e;
-                                });
+                                bloc.selectPaper(selectedPaper: e);
                               },
                               validator: (paper) {
                                 if (paper == null) {
@@ -301,16 +294,18 @@ class _OrderRegistrationPageState
                               final selectedDate = DateTime(date.year,
                                   date.month, date.day, time.hour, time.minute);
 
-                              setState(() {
-                                this.selectedDate = selectedDate;
-                                selectedDateLabel =
-                                    selectedDate.dateAndTimeFormat;
-                              });
+                              bloc.selectDate(selectedDate: selectedDate);
                             }
                           }
                         },
                         icon: const Icon(Icons.calendar_month),
-                        label: Text(selectedDateLabel),
+                        label: BlocSelector<OrderRegistrationBloc,
+                            OrderRegistrationState, DateTime?>(
+                          selector: (state) => state.selectedDate,
+                          builder: (context, selectedDate) {
+                            return Text(selectedDate?.dateAndTimeFormat ?? '');
+                          },
+                        ),
                       )
                     ],
                   ),
@@ -439,7 +434,7 @@ class _OrderRegistrationPageState
                               builder: (context, operation) {
                                 expectedTakeProfitEC.text = operation
                                         ?.defaultExpectedTakeProfit
-                                        ?.toStringAsFixed(2) ??
+                                        ?.toStringAsFixed(0) ??
                                     '0';
 
                                 return TextFormField(
