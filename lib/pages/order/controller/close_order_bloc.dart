@@ -9,8 +9,8 @@ class CloseOrderBloc extends Cubit<CloseOrderState> {
   CloseOrderBloc(this._orderResult) : super(const CloseOrderState.initial());
 
   double calculateTaxByContract({
-    required contractNumber,
-    required taxByContract,
+    required double contractNumber,
+    required double taxByContract,
   }) {
     final tax = _orderResult.calculateTaxByContract(
         contractNumber: contractNumber, taxByContract: taxByContract);
