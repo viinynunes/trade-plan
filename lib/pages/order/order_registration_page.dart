@@ -21,13 +21,12 @@ class OrderRegistrationPage extends StatefulWidget {
 
 class _OrderRegistrationPageState
     extends BaseState<OrderRegistrationPage, OrderRegistrationBloc> {
-  OperationModel? selectedOperation;
   PaperModel? selectedPaper;
 
   DateTime selectedDate = DateTime.now();
   String selectedDateLabel = DateTime.now().dateAndTimeFormat;
 
-  final positionSizeEC = TextEditingController();
+  final contractsEC = TextEditingController();
   final entryPointEC = TextEditingController();
   final stopLossEC = TextEditingController();
   final expectedTakeProfitEC = TextEditingController();
@@ -39,7 +38,7 @@ class _OrderRegistrationPageState
     bloc.getPaperList();
     bloc.getOperationList();
 
-    positionSizeEC.text = '1';
+    contractsEC.text = '0';
     stopLossEC.text = '200';
     expectedTakeProfitEC.text = '500';
   }
@@ -48,7 +47,7 @@ class _OrderRegistrationPageState
   void dispose() {
     stopLossEC.dispose();
     entryPointEC.dispose();
-    positionSizeEC.dispose();
+    contractsEC.dispose();
     expectedTakeProfitEC.dispose();
     super.dispose();
   }
@@ -89,32 +88,37 @@ class _OrderRegistrationPageState
             IconButton(onPressed: () {}, icon: const Icon(Icons.refresh))
           ],
         ),
-        floatingActionButton: FloatingActionButton.extended(
-            onPressed: () {
-              if (formKey.currentState!.validate()) {
-                Navigator.pop(
-                    context,
-                    OrderModel(
-                        operation: selectedOperation!,
-                        paper: selectedPaper!,
-                        contracts: double.parse(positionSizeEC.text),
-                        enterPoint: double.parse(entryPointEC.text),
-                        stopLoss: int.parse(stopLossEC.text),
-                        expectedTakeProfit:
-                            int.parse(expectedTakeProfitEC.text),
-                        executionTime: selectedDate,
-                        status: OrderStatusEnum.open));
-              }
-            },
-            label: Row(
-              children: const [
-                Icon(Icons.save),
-                SizedBox(
-                  width: 10,
-                ),
-                Text('Registrar'),
-              ],
-            )),
+        floatingActionButton:
+            BlocBuilder<OrderRegistrationBloc, OrderRegistrationState>(
+          builder: (context, state) {
+            return FloatingActionButton.extended(
+                onPressed: () {
+                  if (formKey.currentState!.validate()) {
+                    Navigator.pop(
+                        context,
+                        OrderModel(
+                            operation: state.selectedOperation!,
+                            paper: selectedPaper!,
+                            contracts: double.parse(contractsEC.text),
+                            enterPoint: double.parse(entryPointEC.text),
+                            stopLoss: int.parse(stopLossEC.text),
+                            expectedTakeProfit:
+                                int.parse(expectedTakeProfitEC.text),
+                            executionTime: selectedDate,
+                            status: OrderStatusEnum.open));
+                  }
+                },
+                label: Row(
+                  children: const [
+                    Icon(Icons.save),
+                    SizedBox(
+                      width: 10,
+                    ),
+                    Text('Registrar'),
+                  ],
+                ));
+          },
+        ),
         body: Padding(
           padding: const EdgeInsets.all(8.0),
           child: Form(
@@ -184,24 +188,22 @@ class _OrderRegistrationPageState
                   Row(
                     children: [
                       Expanded(
-                        child: BlocSelector<OrderRegistrationBloc,
-                            OrderRegistrationState, List<OperationModel>>(
-                          selector: (state) => state.operationList,
-                          builder: (context, operationList) {
+                        child: BlocBuilder<OrderRegistrationBloc,
+                            OrderRegistrationState>(
+                          bloc: bloc,
+                          builder: (context, state) {
                             return DropdownButtonFormField<OperationModel>(
-                              value: selectedOperation,
+                              value: state.selectedOperation,
                               iconSize: 0,
                               hint: const Text('Ex: Scalping'),
-                              items: operationList
+                              items: state.operationList
                                   .map((e) => DropdownMenuItem(
                                         value: e,
                                         child: Text(e.name),
                                       ))
                                   .toList(),
                               onChanged: (e) {
-                                setState(() {
-                                  selectedOperation = e;
-                                });
+                                bloc.selectOperation(selectedOperation: e);
                               },
                               validator: (operation) {
                                 if (operation == null) {
@@ -255,15 +257,15 @@ class _OrderRegistrationPageState
                             height: 50,
                             alignment: Alignment.center,
                             child: TextFormField(
-                              controller: positionSizeEC,
+                              controller: contractsEC,
                               textAlign: TextAlign.center,
                               style: textTheme.bodyLarge
                                   ?.copyWith(fontWeight: FontWeight.bold),
-                              onTap: () => positionSizeEC.selection =
+                              onTap: () => contractsEC.selection =
                                   TextSelection(
                                       baseOffset: 0,
                                       extentOffset:
-                                          positionSizeEC.value.text.length),
+                                          contractsEC.value.text.length),
                               validator: Validatorless.multiple([
                                 Validatorless.number('Inválido'),
                                 Validatorless.required('Obrigatório'),
@@ -373,29 +375,41 @@ class _OrderRegistrationPageState
                             width: 80,
                             height: 50,
                             alignment: Alignment.center,
-                            child: TextFormField(
-                              controller: stopLossEC,
-                              textAlign: TextAlign.center,
-                              style: textTheme.bodyLarge?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                  color: colorScheme.tertiary),
-                              onTap: () => stopLossEC.selection = TextSelection(
-                                  baseOffset: 0,
-                                  extentOffset: stopLossEC.value.text.length),
-                              validator: Validatorless.multiple([
-                                Validatorless.number('Inválido'),
-                                Validatorless.required('Obrigatório'),
-                                (text) {
-                                  int number = int.parse(text!);
+                            child: BlocSelector<OrderRegistrationBloc,
+                                OrderRegistrationState, OperationModel?>(
+                              selector: (state) => state.selectedOperation,
+                              builder: (context, operation) {
+                                stopLossEC.text = operation?.defaultStopLoss
+                                        ?.toStringAsFixed(0) ??
+                                    '0';
 
-                                  if (number < 0) {
-                                    return 'Inválido';
-                                  }
+                                return TextFormField(
+                                  controller: stopLossEC,
+                                  textAlign: TextAlign.center,
+                                  style: textTheme.bodyLarge?.copyWith(
+                                      fontWeight: FontWeight.bold,
+                                      color: colorScheme.tertiary),
+                                  onTap: () => stopLossEC.selection =
+                                      TextSelection(
+                                          baseOffset: 0,
+                                          extentOffset:
+                                              stopLossEC.value.text.length),
+                                  validator: Validatorless.multiple([
+                                    Validatorless.number('Inválido'),
+                                    Validatorless.required('Obrigatório'),
+                                    (text) {
+                                      int number = int.parse(text!);
 
-                                  return null;
-                                }
-                              ]),
-                              keyboardType: TextInputType.number,
+                                      if (number < 0) {
+                                        return 'Inválido';
+                                      }
+
+                                      return null;
+                                    }
+                                  ]),
+                                  keyboardType: TextInputType.number,
+                                );
+                              },
                             ),
                           ),
                         ],
@@ -419,30 +433,41 @@ class _OrderRegistrationPageState
                             width: 80,
                             height: 50,
                             alignment: Alignment.center,
-                            child: TextFormField(
-                              controller: expectedTakeProfitEC,
-                              textAlign: TextAlign.center,
-                              style: textTheme.bodyLarge?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                  color: colorScheme.secondary),
-                              onTap: () => expectedTakeProfitEC.selection =
-                                  TextSelection(
-                                      baseOffset: 0,
-                                      extentOffset: expectedTakeProfitEC
-                                          .value.text.length),
-                              validator: (text) {
-                                if (text != null) {
-                                  int number = int.parse(text);
+                            child: BlocSelector<OrderRegistrationBloc,
+                                OrderRegistrationState, OperationModel?>(
+                              selector: (state) => state.selectedOperation,
+                              builder: (context, operation) {
+                                expectedTakeProfitEC.text = operation
+                                        ?.defaultExpectedTakeProfit
+                                        ?.toStringAsFixed(2) ??
+                                    '0';
 
-                                  if (number < 0) {
-                                    return 'Inválido';
-                                  }
-                                }
+                                return TextFormField(
+                                  controller: expectedTakeProfitEC,
+                                  textAlign: TextAlign.center,
+                                  style: textTheme.bodyLarge?.copyWith(
+                                      fontWeight: FontWeight.bold,
+                                      color: colorScheme.secondary),
+                                  onTap: () => expectedTakeProfitEC.selection =
+                                      TextSelection(
+                                          baseOffset: 0,
+                                          extentOffset: expectedTakeProfitEC
+                                              .value.text.length),
+                                  validator: (text) {
+                                    if (text != null) {
+                                      int number = int.parse(text);
 
-                                return null;
+                                      if (number < 0) {
+                                        return 'Inválido';
+                                      }
+                                    }
+
+                                    return null;
+                                  },
+                                  textInputAction: TextInputAction.next,
+                                  keyboardType: TextInputType.number,
+                                );
                               },
-                              textInputAction: TextInputAction.next,
-                              keyboardType: TextInputType.number,
                             ),
                           ),
                         ],
@@ -456,26 +481,36 @@ class _OrderRegistrationPageState
                   const SizedBox(
                     height: 20,
                   ),
-                  Text(
-                    'Detalhes da Operação de Continuidade',
-                    style: textTheme.titleLarge,
-                  ),
-                  const SizedBox(
-                    height: 20,
-                  ),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('Operação de $selectedOperation'),
-                      const SizedBox(
-                        height: 10,
-                      ),
-                      const Text('Descrição da Operação'),
-                      const Text(
-                          'A operação de continuidade ocorre após o inicio de uma tendência. Deve-se observar uma causa previamente contruída e com o mercado indo em diração aos pontos importantes'),
-                      const Text('Media de pontos da operação: 100 pontos'),
-                    ],
-                  )
+                  BlocBuilder<OrderRegistrationBloc, OrderRegistrationState>(
+                      bloc: bloc,
+                      builder: (_, state) {
+                        return Column(
+                          children: [
+                            Text(
+                              'Detalhes da Operação de Continuidade',
+                              style: textTheme.titleLarge,
+                            ),
+                            const SizedBox(
+                              height: 20,
+                            ),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                    'Operação de ${state.selectedOperation?.name}'),
+                                const SizedBox(
+                                  height: 10,
+                                ),
+                                const Text('Descrição da Operação'),
+                                const Text(
+                                    'A operação de continuidade ocorre após o inicio de uma tendência. Deve-se observar uma causa previamente contruída e com o mercado indo em diração aos pontos importantes'),
+                                const Text(
+                                    'Media de pontos da operação: 100 pontos'),
+                              ],
+                            )
+                          ],
+                        );
+                      }),
                 ],
               ),
             ),

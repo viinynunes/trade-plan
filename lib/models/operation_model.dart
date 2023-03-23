@@ -8,9 +8,15 @@ class OperationModel extends HiveObject {
   int? id;
   @HiveField(1)
   String name;
+  @HiveField(2)
+  double? defaultStopLoss;
+  @HiveField(3)
+  double? defaultExpectedTakeProfit;
 
   OperationModel({
     this.id,
+    this.defaultStopLoss,
+    this.defaultExpectedTakeProfit,
     required this.name,
   });
 }

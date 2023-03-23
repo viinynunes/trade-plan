@@ -13,23 +13,26 @@ class OrderRegistrationState extends BaseBlocState {
   final OrderRegistrationStatusEnum status;
   final List<OperationModel> operationList;
   final List<PaperModel> paperList;
+  final OperationModel? selectedOperation;
 
-  const OrderRegistrationState({
-    required super.baseStatus,
-    required super.errorMessage,
-    required this.status,
-    required this.operationList,
-    required this.paperList,
-  });
+  const OrderRegistrationState(
+      {required super.baseStatus,
+      required super.errorMessage,
+      required this.status,
+      required this.operationList,
+      required this.paperList,
+      required this.selectedOperation});
 
   OrderRegistrationState.initial()
       : status = OrderRegistrationStatusEnum.idle,
+        selectedOperation = null,
         operationList = [],
         paperList = [],
         super.initial();
 
   @override
-  List<Object?> get props => [status, operationList, paperList, baseStatus];
+  List<Object?> get props =>
+      [status, operationList, paperList, baseStatus, selectedOperation];
 
   @override
   OrderRegistrationState copyWith({
@@ -38,12 +41,14 @@ class OrderRegistrationState extends BaseBlocState {
     BaseBlocStatus? baseStatus,
     List<OperationModel>? operationList,
     List<PaperModel>? paperList,
+    OperationModel? selectedOperation,
   }) {
     return OrderRegistrationState(
         status: status ?? this.status,
         baseStatus: baseStatus ?? this.baseStatus,
         errorMessage: errorMessage ?? this.errorMessage,
         operationList: operationList ?? this.operationList,
-        paperList: paperList ?? this.paperList);
+        paperList: paperList ?? this.paperList,
+        selectedOperation: selectedOperation ?? this.selectedOperation);
   }
 }

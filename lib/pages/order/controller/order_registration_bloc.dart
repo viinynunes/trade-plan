@@ -2,6 +2,7 @@ import 'package:bloc/bloc.dart';
 import 'package:trade_plan/core/ui/bloc/base_bloc_state.dart';
 import 'package:trade_plan/data/operation/repositories/operation_repository.dart';
 import 'package:trade_plan/data/paper/repositories/paper_repository.dart';
+import 'package:trade_plan/models/operation_model.dart';
 
 import 'states/order_registration_state.dart';
 
@@ -36,5 +37,9 @@ class OrderRegistrationBloc extends Cubit<OrderRegistrationState> {
     },
         (failure) => emit(state.copyWith(
             baseStatus: BaseBlocStatus.error, errorMessage: failure.message)));
+  }
+
+  void selectOperation({required OperationModel? selectedOperation}) {
+    emit(state.copyWith(selectedOperation: selectedOperation));
   }
 }

@@ -18,6 +18,8 @@ class OperationModelAdapter extends TypeAdapter<OperationModel> {
     };
     return OperationModel(
       id: fields[0] as int?,
+      defaultStopLoss: fields[2] as double?,
+      defaultExpectedTakeProfit: fields[3] as double?,
       name: fields[1] as String,
     );
   }
@@ -25,11 +27,15 @@ class OperationModelAdapter extends TypeAdapter<OperationModel> {
   @override
   void write(BinaryWriter writer, OperationModel obj) {
     writer
-      ..writeByte(2)
+      ..writeByte(4)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
-      ..write(obj.name);
+      ..write(obj.name)
+      ..writeByte(2)
+      ..write(obj.defaultStopLoss)
+      ..writeByte(3)
+      ..write(obj.defaultExpectedTakeProfit);
   }
 
   @override
