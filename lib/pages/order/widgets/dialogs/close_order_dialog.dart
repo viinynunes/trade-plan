@@ -49,20 +49,29 @@ class _CloseOrderDialogState
 
     resetFields(contracts: true, pointsResult: true, taxByContract: true);
 
-    calculateMoneyResult();
+    bloc.calculateTaxByContract(
+        contractNumber: widget.order.contracts,
+        taxByContract: widget.order.paper.taxByContract ?? 0);
+    calculateBloc();
   }
 
-  _setPointsByResultStatus(
-      {required OrderResultStatus result, required double points}) {
-    if (result == OrderResultStatus.win) {
-      if (points.isNegative) {
-        pointsResultEC.text = points.abs().toString();
+  _setPointsByResultStatus({required OrderResultStatus result}) {
+    if (orderResult == OrderResultStatus.win) {
+      pointsResultEC.text =
+          widget.order.operation.defaultExpectedTakeProfit?.toString() ??
+              pointsResultEC.text;
+
+      if (getPoints().isNegative) {
+        pointsResultEC.text = getPoints().abs().toString();
       }
     }
 
-    if (result == OrderResultStatus.loss) {
-      if (!points.isNegative) {
-        pointsResultEC.text = (points * (-1)).toString();
+    if (orderResult == OrderResultStatus.loss) {
+      pointsResultEC.text =
+          widget.order.operation.defaultStopLoss?.toString() ??
+              pointsResultEC.text;
+      if (!getPoints().isNegative) {
+        pointsResultEC.text = (getPoints() * (-1)).toString();
       }
     }
   }
@@ -116,7 +125,7 @@ class _CloseOrderDialogState
         : null;
   }
 
-  calculateMoneyResult() {
+  calculateBloc() {
     bloc.calculateMoneyResult(
       contractNumber: getContracts(),
       points: getPoints(),
@@ -235,9 +244,10 @@ class _CloseOrderDialogState
                                   bloc.calculateTaxByContract(
                                       contractNumber: getContracts(),
                                       taxByContract:
-                                          widget.order.paper.taxByContract);
+                                          widget.order.paper.taxByContract ??
+                                              0);
                                 }
-                                calculateMoneyResult();
+                                calculateBloc();
                                 HapticFeedback.vibrate();
                               }
                             },
@@ -289,11 +299,9 @@ class _CloseOrderDialogState
                     });
 
                     if (pointsResultEC.text.isNotEmpty) {
-                      _setPointsByResultStatus(
-                          points: double.parse(pointsResultEC.text),
-                          result: orderResult);
+                      _setPointsByResultStatus(result: orderResult);
 
-                      calculateMoneyResult();
+                      calculateBloc();
                     }
                   },
                   alignment: Alignment.center,
@@ -319,13 +327,12 @@ class _CloseOrderDialogState
                   },
                   onChanged: (text) {
                     if (text.isNotEmpty) {
-                      calculateMoneyResult();
+                      calculateBloc();
                     }
                   },
                   onFieldSubmitted: (text) {
                     setState(() {
-                      _setPointsByResultStatus(
-                          result: orderResult, points: double.parse(text));
+                      _setPointsByResultStatus(result: orderResult);
                     });
                   },
                   validator: Validatorless.required('Obrigatório'),
@@ -342,7 +349,7 @@ class _CloseOrderDialogState
                   builder: (context, tax) {
                     if (!editTaxManually) {
                       taxEC.text = tax.toStringAsFixed(2);
-                      calculateMoneyResult();
+                      calculateBloc();
                     }
 
                     return TextFormField(
@@ -361,7 +368,7 @@ class _CloseOrderDialogState
                       onFieldSubmitted: (text) {
                         taxEC.text = text;
 
-                        calculateMoneyResult();
+                        calculateBloc();
                       },
                     );
                   },
@@ -371,7 +378,7 @@ class _CloseOrderDialogState
                     setState(() {
                       editTaxManually = !editTaxManually;
                       resetFields(taxByContract: true);
-                      calculateMoneyResult();
+                      calculateBloc();
                     });
                   },
                   child: Row(
@@ -381,7 +388,7 @@ class _CloseOrderDialogState
                           onChanged: (e) {
                             setState(() {
                               editTaxManually = e!;
-                              calculateMoneyResult();
+                              calculateBloc();
                             });
                           }),
                       const Text('Editar Taxa Manualmente'),
