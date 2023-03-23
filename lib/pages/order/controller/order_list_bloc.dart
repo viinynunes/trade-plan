@@ -12,6 +12,9 @@ class OrderListBloc extends Cubit<OrderListState> {
   OrderListBloc(this._repository) : super(OrderListState.initial());
 
   void selectDate({required DateTime? selectedDate}) {
+    getClosedOrderList(date: selectedDate ?? DateTime.now());
+    getOpenedOrderList(date: selectedDate ?? DateTime.now());
+
     emit(state.copyWith(selectedDate: selectedDate));
   }
 

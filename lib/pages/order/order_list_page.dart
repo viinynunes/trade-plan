@@ -82,8 +82,8 @@ class _OrderListPageState extends BaseState<OrderListPage, OrderListBloc> {
                       return GestureDetector(
                         onLongPress: () {
                           HapticFeedback.vibrate();
-                          bloc.getClosedOrderList(date: selectedDate);
-                          bloc.getOpenedOrderList(date: selectedDate);
+
+                          bloc.selectDate(selectedDate: DateTime.now());
                         },
                         onTap: () {
                           showDatePicker(
@@ -93,8 +93,6 @@ class _OrderListPageState extends BaseState<OrderListPage, OrderListBloc> {
                                   lastDate: DateTime(3000))
                               .then((value) {
                             bloc.selectDate(selectedDate: value);
-                            bloc.getClosedOrderList(date: selectedDate);
-                            bloc.getOpenedOrderList(date: selectedDate);
                           });
                         },
                         child: Padding(
