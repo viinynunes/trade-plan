@@ -24,16 +24,14 @@ class HiveOrderDatasource implements OrderDatasource {
 
   @override
   Future<List<OrderModel>> getOpenedOrderListByDate(
-      {required DateTime date}) async { 
+      {required DateTime date}) async {
     List<OrderModel> orderList = [];
 
     for (var v in box.values) {
       orderList.add(v);
     }
 
-    orderList.removeWhere((order) =>
-        order.status != OrderStatusEnum.open ||
-        order.executionTime.onlyDateFormat != date.onlyDateFormat);
+    orderList.removeWhere((order) => order.status != OrderStatusEnum.open);
 
     orderList.sort((a, b) => a.executionTime.compareTo(b.executionTime));
 
